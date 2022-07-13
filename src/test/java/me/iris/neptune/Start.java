@@ -1,10 +1,13 @@
 package me.iris.neptune;
 
+import me.iris.neptune.systems.*;
+
 import java.lang.reflect.InvocationTargetException;
 
 public class Start {
     public static void main(String[] args) {
-        EventSystem sys = new EventSystem(true);
+        EventSystem sys = new VerboseEventSystem(System.out).setBrute(true);
+        //EventSystem sys = new BruteEventSystem();
         ExampleListener listener = new ExampleListener();
 
         // You can use register(this) as well
