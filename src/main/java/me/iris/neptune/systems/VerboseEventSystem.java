@@ -32,19 +32,21 @@ public class VerboseEventSystem extends EventSystem {
     }
 
     public void register(Object cls) {
+        // Get methods to check for annotation
         final Method[] methods = brute ?
                 cls.getClass().getDeclaredMethods() :
                 cls.getClass().getMethods();
 
+        // Check methods for Subscribe annotation
         for (Method method : methods) {
-            if (!method.isAnnotationPresent(Subscribe.class))
-                continue;
+            if (!method.isAnnotationPresent(Subscribe.class)) continue;
 
             //noinspection unchecked
             Class<? extends Event> event = (Class<? extends Event>)method.getParameterTypes()[0];
             if (!listeners.containsKey(event))
                 listeners.put(event, new CopyOnWriteArrayList<>());
 
+            // Add new listener class w/ class & method to event
             listeners.get(event).add(new Listener(cls, method));
         }
 
@@ -52,6 +54,7 @@ public class VerboseEventSystem extends EventSystem {
     }
 
     public void unregister(Object cls) {
+        // Remove class if it's found
         for (CopyOnWriteArrayList<Listener> mth : listeners.values())
             mth.removeIf(method -> method.getListenerClass().equals(cls));
 
@@ -59,14 +62,14 @@ public class VerboseEventSystem extends EventSystem {
     }
 
     public void post(Event event) throws InvocationTargetException, IllegalAccessException {
-        if (event.isCancelled())
-            return;
-
+        // Get listener classes for event
         List<Listener> subs = listeners.get(event.getClass());
-        if (subs == null)
-            return;
+        if (subs == null) return;
 
         for (Listener method : subs) {
+            // Ignore if the event is cancelled
+            if (event.isCancelled()) break;
+
             final boolean inaccessible = !method.getMethod().isAccessible();
             if (inaccessible && !brute) {
                 stream.printf("%s> ignoring method \"%s\" from \"%s\". (not public)\n",
@@ -75,6 +78,7 @@ public class VerboseEventSystem extends EventSystem {
             } else if (brute)
                 method.getMethod().setAccessible(true);
 
+            // Invoke method
             method.getMethod().invoke(method.getListenerClass(), event);
             if (brute)
                 method.getMethod().setAccessible(false);
