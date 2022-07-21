@@ -9,17 +9,16 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class VerboseEventSystem extends EventSystem {
-    private final Map<Class<? extends Event>, CopyOnWriteArrayList<Listener>> listeners;
+    private final String name;
     private final PrintStream stream;
     private boolean brute;
 
-    public VerboseEventSystem(PrintStream stream) {
-        this.listeners = new ConcurrentHashMap<>();
+    public VerboseEventSystem(String name, PrintStream stream) {
+        super();
+        this.name = name;
         this.stream = stream;
     }
 
@@ -50,7 +49,7 @@ public class VerboseEventSystem extends EventSystem {
             listeners.get(event).add(new Listener(cls, method));
         }
 
-        stream.println("registered: " + cls.getClass().getName());
+        stream.printf("[%s]: registered \"%s\"\n", name, cls.getClass().getName());
     }
 
     public void unregister(Object cls) {
@@ -58,7 +57,7 @@ public class VerboseEventSystem extends EventSystem {
         for (CopyOnWriteArrayList<Listener> mth : listeners.values())
             mth.removeIf(method -> method.getListenerClass().equals(cls));
 
-        stream.println("unregistered: " + cls.getClass().getName());
+        stream.printf("[%s]: unregistered \"%s\"\n", name, cls.getClass().getName());
     }
 
     public void post(Event event) throws InvocationTargetException, IllegalAccessException {
@@ -70,9 +69,10 @@ public class VerboseEventSystem extends EventSystem {
             // Ignore if the event is cancelled
             if (event.isCancelled()) break;
 
+            // Set accessibility if the method can't be accessed
             final boolean inaccessible = !method.getMethod().isAccessible();
             if (inaccessible && !brute) {
-                stream.printf("%s> ignoring method \"%s\" from \"%s\". (not public)\n",
+                stream.printf("[%s]: \"%s\" ignoring method \"%s\" from \"%s\" (not public)\n", name,
                         event.getClass().getName(), method.getMethod().getName(), method.getListenerClass().getClass().getName());
                 continue;
             } else if (brute)
@@ -83,10 +83,45 @@ public class VerboseEventSystem extends EventSystem {
             if (brute)
                 method.getMethod().setAccessible(false);
 
-            stream.printf("%s> invoking method \"%s\" from class \"%s\".\n",
+            stream.printf("[%s]: \"%s\" invoking method \"%s\" from class \"%s\"\n", name,
                     event.getClass().getName(), method.getMethod().getName(), method.getListenerClass().getClass().getName());
         }
 
-        stream.println("posted event: " + event.getClass().getName());
+        stream.printf("[%s]: posted event \"%s\"\n", name, event.getClass().getName());
+    }
+
+    public void postHandle(Event event) {
+        // Get listener classes for event
+        List<Listener> subs = listeners.get(event.getClass());
+        if (subs == null) return;
+
+        for (Listener method : subs) {
+            // Ignore if the event is cancelled
+            if (event.isCancelled()) break;
+
+            // Set accessibility if the method can't be accessed
+            final boolean inaccessible = !method.getMethod().isAccessible();
+            if (inaccessible && !brute) {
+                stream.printf("[%s]: \"%s\" ignoring method \"%s\" from \"%s\" (not public)\n", name,
+                        event.getClass().getName(), method.getMethod().getName(), method.getListenerClass().getClass().getName());
+                continue;
+            } else if (brute)
+                method.getMethod().setAccessible(true);
+
+            // Invoke method
+            try {
+                method.getMethod().invoke(method.getListenerClass(), event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
+
+            if (brute)
+                method.getMethod().setAccessible(false);
+
+            stream.printf("[%s]: \"%s\" invoking method \"%s\" from class \"%s\"\n", name,
+                    event.getClass().getName(), method.getMethod().getName(), method.getListenerClass().getClass().getName());
+        }
+
+        stream.printf("[%s]: posted event \"%s\"\n", name, event.getClass().getName());
     }
 }

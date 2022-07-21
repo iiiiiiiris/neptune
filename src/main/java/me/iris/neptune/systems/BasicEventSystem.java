@@ -8,18 +8,14 @@ import me.iris.neptune.data.Listener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Basic event system; only calls public/accessible listener methods.
  */
 public class BasicEventSystem extends EventSystem {
-    protected final Map<Class<? extends Event>, CopyOnWriteArrayList<Listener>> listeners;
-
     public BasicEventSystem() {
-        this.listeners = new ConcurrentHashMap<>();
+        super();
     }
 
     public void register(Object cls) {
@@ -54,6 +50,24 @@ public class BasicEventSystem extends EventSystem {
 
             // Invoke method
             method.getMethod().invoke(method.getListenerClass(), event);
+        }
+    }
+
+    public void postHandle(Event event) {
+        // Get listener classes for event
+        List<Listener> subs = listeners.get(event.getClass());
+        if (subs == null) return;
+
+        for (Listener method : subs) {
+            // Ignore if the event is cancelled
+            if (event.isCancelled()) break;
+
+            // Invoke method
+            try {
+                method.getMethod().invoke(method.getListenerClass(), event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

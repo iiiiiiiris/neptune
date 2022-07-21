@@ -6,8 +6,9 @@ import java.lang.reflect.InvocationTargetException;
 
 public class Start {
     public static void main(String[] args) {
-        EventSystem sys = new VerboseEventSystem(System.out).setBrute(true);
+        //EventSystem sys = new BasicEventSystem();
         //EventSystem sys = new BruteEventSystem();
+        EventSystem sys = new VerboseEventSystem("main-event-system", System.out).setBrute(true);
         ExampleListener listener = new ExampleListener();
 
         // You can use register(this) as well

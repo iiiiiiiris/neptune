@@ -13,6 +13,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Basic event system; calls all listeners.
  */
 public class BruteEventSystem extends BasicEventSystem {
+    public BruteEventSystem() {
+        super();
+    }
+
     @Override
     public void register(Object cls) {
         // Check all methods for Subscribe annotation
@@ -45,6 +49,32 @@ public class BruteEventSystem extends BasicEventSystem {
 
             // Invoke method
             method.getMethod().invoke(method.getListenerClass(), event);
+
+            if (resetAccess)
+                method.getMethod().setAccessible(false);
+        }
+    }
+
+    @Override
+    public void postHandle(Event event) {
+        // Get listener classes for event
+        List<Listener> subs = listeners.get(event.getClass());
+        if (subs == null) return;
+
+        for (Listener method : subs) {
+            // Ignore if the event is cancelled
+            if (event.isCancelled()) break;
+
+            boolean resetAccess = !method.getMethod().isAccessible();
+            if (resetAccess)
+                method.getMethod().setAccessible(true);
+
+            // Invoke method
+            try {
+                method.getMethod().invoke(method.getListenerClass(), event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
 
             if (resetAccess)
                 method.getMethod().setAccessible(false);
