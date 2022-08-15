@@ -1,19 +1,16 @@
 package me.iris.neptune;
 
 import me.iris.neptune.annotation.Subscribe;
+import me.iris.neptune.enums.EventPriority;
 
 public class ExampleListener {
-    @Subscribe
+    //@Subscribe
+    @Subscribe(priority = EventPriority.HIGHEST)
     private void onExample(ExampleEvent event) {
-        /*
-        Cancelling doesn't work in this example (natively)
-        Read comment in Start.java
-        */
+        System.out.println(event.getNum());
         if (event.getNum() >= 3) {
             System.out.println("cancelled");
             event.cancel();
         }
-
-        System.out.println(event.getNum());
     }
 }

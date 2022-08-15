@@ -1,11 +1,9 @@
 package me.iris.neptune;
 
-import me.iris.neptune.annotation.NonCancellable;
-import me.iris.neptune.data.Event;
+import me.iris.neptune.data.events.CancellableEvent;
 
 // Never cancel the event
-@NonCancellable
-public class ExampleEvent extends Event {
+public class ExampleEvent extends CancellableEvent {
     private final int num;
 
     public ExampleEvent(int num) {

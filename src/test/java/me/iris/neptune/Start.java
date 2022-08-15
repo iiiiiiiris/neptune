@@ -1,33 +1,33 @@
 package me.iris.neptune;
 
-import me.iris.neptune.systems.*;
-
-import java.lang.reflect.InvocationTargetException;
+import me.iris.neptune.data.VerboseInfo;
 
 public class Start {
     public static void main(String[] args) {
-        //EventSystem sys = new BasicEventSystem();
-        //EventSystem sys = new BruteEventSystem();
-        EventSystem sys = new VerboseEventSystem("main-event-system", System.out).setBrute(true);
+        // Create event bus with default settings
+        //final EventBus bus = new EventBus();
+
+        // Create custom event bus
+        final EventBus bus = new EventBus.Builder()
+                .setVerboseInfo(new VerboseInfo("main-bus", System.out))
+                .canModifyAccess(true)
+                .build();
+
+        // Listener class
         ExampleListener listener = new ExampleListener();
 
         // You can use register(this) as well
-        sys.register(listener);
+        bus.register(listener);
 
         for (int i = 0; i < 5; i++) {
-            try {
-                ExampleEvent event = new ExampleEvent(i);
-                sys.post(event);
+            ExampleEvent event = new ExampleEvent(i);
+            bus.post(event);
 
-                // Have to add this in this example since we create a new instance of the event every number
-                // By default the ExampleEvent has the NonCancellable annotation so this is ignored
-                if (event.isCancelled())
-                    break;
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            // Have to add this in this example since we create a new instance of the event every number
+            // By default the ExampleEvent has the NonCancellable annotation so this is ignored
+            if (event.isCancelled()) break;
         }
 
-        sys.unregister(listener);
+        bus.unregister(listener);
     }
 }
