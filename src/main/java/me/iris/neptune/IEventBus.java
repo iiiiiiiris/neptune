@@ -16,7 +16,7 @@ public abstract class IEventBus {
     /**
      * Semantic version
      */
-    protected final String version = "2.0.0";
+    protected final String version = "2.0.1";
 
     /**
      * Constructor for event systems (DO NOT USE THIS TO INITIALIZE AN EVENT SYSTEM)
