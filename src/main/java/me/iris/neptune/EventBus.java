@@ -14,7 +14,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-@SuppressWarnings("unchecked")
 public class EventBus extends IEventBus {
     private final VerboseInfo verbose;
     private final boolean modifyAccess;
@@ -29,6 +28,7 @@ public class EventBus extends IEventBus {
         this.modifyAccess = modifyAccess;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void register(Object cls) {
         // Get methods of class
@@ -101,7 +101,8 @@ public class EventBus extends IEventBus {
             // Invoke method
             try {
                 listener.getMethod().invoke(listener.getListenerClass(), event);
-                printf("%s> invoked: %s", event.getClass().getName(), listener.getMethod().getName());
+                printf("%s> invoked: %s within %s", event.getClass().getName(), listener.getMethod().getName(),
+                        listener.getListenerClass().getClass().getName());
             } catch (IllegalAccessException e) {
                 throw new AccessException(e.getMessage());
             } catch (InvocationTargetException e) {
